@@ -22,3 +22,11 @@ cham 2 win
 champ -IN (win) -> match (timestamp properties)
 
 champ -IN-> lineup -PLAYS (win)-> match(timestamp properties)
+
+
+use Shapely to match the cities to region is enrichment or just transformation?
+
+- launching docker containers via airflow to schedule job
+- STAR schema design includes maintenance upon updates
+- using REDIS for speeding up steps
+- creativity: data viz, serious analysis, performance analysis, extensive cleansing
