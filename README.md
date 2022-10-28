@@ -75,7 +75,8 @@ Use Shapely to match the cities to region is enrichment or just transformation?
 - [ ] repository with the code, well documented, including
 - [ ] docker-compose file to run the environment
 - [ ] detailed description of the various steps
-- [ ] report (Can be in the Repository README) with the project - [ ] design steps (divided per area)
+- [ ] report (Can be in the Repository README) with the project 
+- [ ] design steps (divided per area)
 - [ ] Example dataset: the project testing should work offline, i.e., you need to have some sample data points.
 slides for the project presentation.
 
