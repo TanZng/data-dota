@@ -86,3 +86,25 @@ slides for the project presentation.
 - [ ] STAR schema design includes maintenance upon updates
 - [ ] using REDIS for speeding up steps
 - [ ] creativity: data viz, serious analysis, performance analysis, extensive cleansing
+
+# Docker compose
+
+```bash
+# Postgres
+postgres://{user}:{password}@{hostname}:{port}/{database-name}
+# Redis
+redis :// [[username :] password@] host [:port][/database]
+# Mongodb
+mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb]]
+# Neo4j
+bolt://host:port
+```
+
+| Component        | In machine                                  | Inside Docker                                      |
+| ---------------- | ------------------------------------------- | -------------------------------------------------- |
+| Project Postgres | `postgres://user:password@localhost:5432`   | `postgres://user:password@postgres:5432`           |
+| Project Redis    | `redis://@localhost:6379`                   | `redis://:@redis:6379`                             |
+| Project Mongo    | `mongodb://localhost:27017`                 | `mongodb://mongo:27017`                            |
+| Project Neo4j    | `bolt://localhost:7687`                     | `bolt://neo:7687`                                  |
+| Airflow Postgres | `postgres://airflow:airflow@localhost:5432` | `postgres://airflow:airflow@postgres-airflow:5432` |
+| Airflow Redis    | `redis://:@localhost:6380`                  | `redis://:@redis-airflow:6379`                     |

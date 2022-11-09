@@ -5,9 +5,9 @@ services:
     container_name: postgres
     restart: always
     environment:
-      POSTGRES_DB: data-dota
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
@@ -15,8 +15,12 @@ services:
       - type: bind
         source: ./tmp/postgres-data
         target: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
   redis: 
-    image: redis
+    image: redis:6.0.16-bullseye
     hostname: redis
     container_name: redis
     restart: always
@@ -26,6 +30,11 @@ services:
       - type: bind
         source: ./tmp/redis-data
         target: /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
   mongo:
     image: mongo:6.0.2-focal
     hostname: mongo
@@ -55,3 +64,31 @@ services:
       - type: bind
         source: ./tmp/neo4j-data
         target: /data
+  postgres-airflow:
+    extends:
+      file: airflow-compose.yml
+      service: postgres-airflow
+  redis-airflow:
+    extends:
+      file: airflow-compose.yml
+      service: redis-airflow
+  airflow-webserver:
+    extends:
+      file: airflow-compose.yml
+      service: airflow-webserver
+  airflow-scheduler:
+    extends:
+      file: airflow-compose.yml
+      service: airflow-scheduler
+  airflow-worker:
+    extends:
+      file: airflow-compose.yml
+      service: airflow-worker  
+  airflow-init:
+    extends:
+      file: airflow-compose.yml
+      service: airflow-init
+  flower:
+    extends:
+      file: airflow-compose.yml
+      service: flower
