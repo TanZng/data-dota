@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:13.8-bullseye
+    hostname: postgres
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: data-dota
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - type: bind
+        source: ./tmp/postgres-data
+        target: /var/lib/postgresql/data
+  redis: 
+    image: redis
+    hostname: redis
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - type: bind
+        source: ./tmp/redis-data
+        target: /data
+  mongo:
+    image: mongo:6.0.2-focal
+    hostname: mongo
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME:
+      MONGO_INITDB_ROOT_PASSWORD:
+    ports:
+        - "27017:27017"
+        - "27018:27018"
+    volumes:
+      - type: bind
+        source: ./tmp/mongo-data
+        target: /data/db
+  neo:
+    image: neo4j:4.0.3
+    hostname: neo
+    container_name: neo
+    restart: always
+    environment:
+      NEO4J_AUTH: none
+    ports:
+        - "7474:7474"
+        - "7687:7687"
+    volumes:
+      - type: bind
+        source: ./tmp/neo4j-data
+        target: /data
