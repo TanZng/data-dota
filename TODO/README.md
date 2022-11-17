@@ -56,7 +56,7 @@ cham 1
 cham 2 win
 
 cham1 
-chan3 lose
+cham3 lose
 
 cham 1
 cham 2 win
