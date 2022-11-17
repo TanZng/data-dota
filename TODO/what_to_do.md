@@ -31,9 +31,9 @@ attributes to retrieve from Opendota DB :
 - "comeback": numbers representing the highest gold advantage of the loosing team => the higher the value the bigger the comeback
 - "stomp": numbers representing the highest gold advantage of the winning team => the higher the value the easier it was to win
 - "radiant_win": boolean => true means Radiant team win = players id 0 to 4 // false means Dire team win so players id from 5 to 9
-- create a "sunlight" attribute : id of the level of the sunlight during the match => foreign key od the dimension table "level_of_sunlight"
-- create a "lineup_radiant" attribute : list of five heroes belonging to Radiant team
-- create a "lineup_dire" attribute : list of five heroes belonging to Dire team
+
+We will also have to create a "sunlight" attribute = id of the level of the sunlight during the match => foreign key od the dimension table "level_of_sunlight" ; create a "lineup_radiant" attribute : list of five heroes belonging to Radiant team ; create a "lineup_dire" attribute : list of five heroes belonging to Dire team
+
 result = JSON files with data to form :
 - one fact_table "match_detail" with each row representing one match and as many columns as attributes filtered
 - 3 dimension_tables :
