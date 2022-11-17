@@ -18,22 +18,22 @@ Then, using Sunlight DB, we calculate the average sunlight per month for each re
 
 filter Opendota DB to get just some attributes (cf below) for each match + ignore empty rows (or other tests as "are there 10 players in the match ?")
 attributes to retrieve from Opendota DB :
-"match_id": the id of the match
-"duration": the duration of the match in seconds => to transform from seconds to adjectives (very short = less than 20min, short = 20-30min,
-medium = 30-50min, long = 50min-1h30, very long = more than 1h30)
-"game_mode": if need more complexity (one more dimension),
-"human_players": numbers of human players during this match (exactly 10, else delete the match),
-"start_time": start time of the match (UNIX format = number of seconds since january 1st 1970 at midnight),
-"version":if need more complexity (one more dimension),
-"players": identifiers of the players,
-"heroes": identifiers the heroes playing in the match,
-"region": id of the region,
-"comeback": numbers representing the highest gold advantage of the loosing team => the higher the value the bigger the comeback
-"stomp": numbers representing the highest gold advantage of the winning team => the higher the value the easier it was to win
-"radiant_win": boolean => true means Radiant team win = players id 0 to 4 // false means Dire team win so players id from 5 to 9
-create a "sunlight" attribute : id of the level of the sunlight during the match => foreign key od the dimension table "level_of_sunlight"
-create a "lineup_radiant" attribute : list of five heroes belonging to Radiant team
-create a "lineup_dire" attribute : list of five heroes belonging to Dire team
+- "match_id": the id of the match
+- "duration": the duration of the match in seconds => to transform from seconds to adjectives (very short = less than 20min, short = 20-30min,
+- medium = 30-50min, long = 50min-1h30, very long = more than 1h30)
+- "game_mode": if need more complexity (one more dimension),
+- "human_players": numbers of human players during this match (exactly 10, else delete the match),
+- "start_time": start time of the match (UNIX format = number of seconds since january 1st 1970 at midnight),
+- "version":if need more complexity (one more dimension),
+- "players": identifiers of the players,
+- "heroes": identifiers the heroes playing in the match,
+- "region": id of the region,
+- "comeback": numbers representing the highest gold advantage of the loosing team => the higher the value the bigger the comeback
+- "stomp": numbers representing the highest gold advantage of the winning team => the higher the value the easier it was to win
+- "radiant_win": boolean => true means Radiant team win = players id 0 to 4 // false means Dire team win so players id from 5 to 9
+- create a "sunlight" attribute : id of the level of the sunlight during the match => foreign key od the dimension table "level_of_sunlight"
+- create a "lineup_radiant" attribute : list of five heroes belonging to Radiant team
+- create a "lineup_dire" attribute : list of five heroes belonging to Dire team
 result = JSON files with data to form :
 - one fact_table "match_detail" with each row representing one match and as many columns as attributes filtered
 - 3 dimension_tables :
