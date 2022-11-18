@@ -1,7 +1,7 @@
 # STEP 1 = DATA INGESTION :
 
 start with 4 DBs :
-- Matchs ids => allows us to retrieve match ids with Dota API
+- Matchs ids => JSON file; allows us to retrieve match ids with Dota API
 - Constant => JSON file downloaded manually allowing us to identify regions and heroes of Opendota database
 - Sunlight => CSV file containing sunlights data for regions in countries
 - Opendota => JSON file retrieved with API request using match id
@@ -20,7 +20,7 @@ filter Opendota DB to get just some attributes (cf below) for each match + ignor
 attributes to retrieve from Opendota DB :
 - "match_id": the id of the match
 - "duration": the duration of the match in seconds => to transform from seconds to adjectives (very short = less than 20min, short = 20-30min,
-- medium = 30-50min, long = 50min-1h30, very long = more than 1h30)
+medium = 30-50min, long = 50min-1h30, very long = more than 1h30)
 - "game_mode": if need more complexity (one more dimension),
 - "human_players": numbers of human players during this match (exactly 10, else delete the match),
 - "start_time": start time of the match (UNIX format = number of seconds since january 1st 1970 at midnight),
