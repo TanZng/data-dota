@@ -43,7 +43,8 @@ result = JSON files with data to form :
 - one temp_table which makes corresponding id of Opendota region with id of sunlight level. To create this table :
     - 1) group all the sunlight region (cities) corresponding to the Opendota region (ex : region Opendota = EU West => cities from sunlight DB = Paris, Lyon, Marseille, London...)
     - 2) calculate the average sunlight per month for the whole Opendota region (ex : EU West for january = 130)
-    - 3) classify each sunlight value by one sunlight level qualifier (ex : 130 => dark ? to be defined) 
+    - 3) classify each sunlight value by one sunlight level qualifier (ex : 130 => dark ? to be defined)
+    Average by Region, per year: <70%, 70-90%, 90-110%, 110-130%, >130%
 - one table "hero" directly from data ingestion step from Constant DB (id and name of each Opendota hero) => this is not a dimension table because it will be used to produce graph schema and not star schema
 
 # STEP 3 DATA PRODUCTION :
