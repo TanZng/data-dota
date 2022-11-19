@@ -65,34 +65,45 @@ services:
         source: ./tmp/neo4j-data
         target: /data
   postgres-airflow:
+    container_name: postgres-airflow
     extends:
       file: airflow-compose.yaml
       service: postgres-airflow
   redis-airflow:
+    container_name: redis-airflow
     extends:
       file: airflow-compose.yaml
       service: redis-airflow
   airflow-webserver:
+    container_name: airflow-webserver
     extends:
       file: airflow-compose.yaml
       service: airflow-webserver
   airflow-scheduler:
+    container_name: airflow-scheduler
     extends:
       file: airflow-compose.yaml
       service: airflow-scheduler
   airflow-worker:
+    container_name: airflow-worker
     extends:
       file: airflow-compose.yaml
       service: airflow-worker  
   airflow-init:
+    container_name: airflow-init
     profiles: ["init"]
     extends:
       file: airflow-compose.yaml
       service: airflow-init
   flower:
+    container_name: airflow-flower
     extends:
       file: airflow-compose.yaml
       service: flower
+  docker-socket-proxy:
+    extends:
+      file: airflow-compose.yaml
+      service: docker-socket-proxy
 networks:
   default:
     name: data-dota

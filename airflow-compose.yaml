@@ -14,6 +14,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     AIRFLOW_HOME: "/opt/airflow"
     AIRFLOW__CORE_dags_folder: "/opt/airflow/dags"
+    AIRFLOW__CORE__ENABLE_XCOM_PICKLING: "true" # "_run_image of the DockerOperator returns now a python string, not a byte string" Ref: https://github.com/apache/airflow/issues/13487
     AIRFLOW__API__AUTH_BACKEND: "airflow.api.auth.backend.basic_auth"
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
@@ -173,4 +174,15 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+    restart: always
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:0.1.1
+    environment:
+      CONTAINERS: 1
+      IMAGES: 1
+      AUTH: 1
+      POST: 1
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: always
