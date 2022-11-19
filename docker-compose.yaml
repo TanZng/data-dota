@@ -93,3 +93,6 @@ services:
     extends:
       file: airflow-compose.yaml
       service: flower
+networks:
+  default:
+    name: data-dota
