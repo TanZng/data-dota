@@ -37,7 +37,7 @@ services:
       retries: 50
   mongo:
     image: mongo:6.0.2-focal
-    hostname: mongo
+    hostname: mongo7687
     container_name: mongo
     restart: always
     environment:
@@ -66,29 +66,30 @@ services:
         target: /data
   postgres-airflow:
     extends:
-      file: airflow-compose.yml
+      file: airflow-compose.yaml
       service: postgres-airflow
   redis-airflow:
     extends:
-      file: airflow-compose.yml
+      file: airflow-compose.yaml
       service: redis-airflow
   airflow-webserver:
     extends:
-      file: airflow-compose.yml
+      file: airflow-compose.yaml
       service: airflow-webserver
   airflow-scheduler:
     extends:
-      file: airflow-compose.yml
+      file: airflow-compose.yaml
       service: airflow-scheduler
   airflow-worker:
     extends:
-      file: airflow-compose.yml
+      file: airflow-compose.yaml
       service: airflow-worker  
   airflow-init:
+    profiles: ["init"]
     extends:
-      file: airflow-compose.yml
+      file: airflow-compose.yaml
       service: airflow-init
   flower:
     extends:
-      file: airflow-compose.yml
+      file: airflow-compose.yaml
       service: flower

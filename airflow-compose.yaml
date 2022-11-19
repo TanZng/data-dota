@@ -23,9 +23,9 @@ x-airflow-common: &airflow-common
     - ./airflow/config/airflow.cfg:/opt/airflow/airflow.cfg
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
   depends_on:
-    redis:
+    redis-airflow:
       condition: service_healthy
-    postgres:
+    postgres-airflow:
       condition: service_healthy
 services:
   postgres-airflow:
@@ -42,13 +42,14 @@ services:
       - "5433:5432"
     volumes:
       - type: bind
-        source: ./tmp/postgres-data
+        source: ./tmp/postgres-data-airflow
         target: /var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
       retries: 5
   redis-airflow: 
+    image: redis:6.0.16-bullseye
     image: redis:6.0.16-bullseye
     hostname: redis-airflow
     container_name: redis-airflow
@@ -57,7 +58,7 @@ services:
       - "6380:6379"
     volumes:
       - type: bind
-        source: ./tmp/redis-data
+        source: ./tmp/redis-data-airflow
         target: /data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -101,6 +102,7 @@ services:
     restart: always
   airflow-init:
     <<: *airflow-common
+    profiles: ["init"]
     entrypoint: /bin/bash
     command:
       - -c
@@ -160,7 +162,7 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
     user: "0:${AIRFLOW_GID:-0}"
     volumes:
-      - .:/sources
+      - ./airflow:/sources
   flower:
     <<: *airflow-common
     command: celery flower
