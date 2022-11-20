@@ -11,7 +11,6 @@ class ResponseStatusCodeException(Exception):
     def __str__(self):
         return self.message + str(self.code)
 
-from pickle import FALSE, TRUE
 import requests, pandas as pd
 import time
 
@@ -30,8 +29,8 @@ count = 1
 
 while (count<1001):
 
-    retry = TRUE
-    while (retry==TRUE):
+    retry = True
+    while (retry==True):
         try:
             response = requests.get(requestUrl)
             if (response.status_code!=200):
@@ -41,7 +40,7 @@ while (count<1001):
             if (len(response['result']['matches'])!=100):
                 raise ResponseResultsCountException
             else:
-                retry = FALSE
+                retry = False
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)
         except (ResponseResultsCountException,ResponseStatusCodeException) as e:
