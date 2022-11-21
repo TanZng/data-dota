@@ -64,6 +64,12 @@ services:
       - type: bind
         source: ./tmp/neo4j-data
         target: /data
+  mock-api:
+    build:
+      context: ./mock-api
+      dockerfile: ../mock-api/Dockerfile
+    ports:
+      - "5010:5010"
   postgres-airflow:
     container_name: postgres-airflow
     extends:
