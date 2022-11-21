@@ -1,3 +1,15 @@
+Create a .env file
+
+> Get the AIRFLOW_UID using `id -u`
+
+```s
+_AIRFLOW_WWW_USER_USERNAME=airflow
+_AIRFLOW_WWW_USER_PASSWORD=airflow
+AIRFLOW_UID=1000
+AIRFLOW_GID=0
+_PIP_ADDITIONAL_REQUIREMENTS=xlsx2csv==0.7.8 faker==8.12.1 apache-airflow-providers-mongo==2.3.1 apache-airflow-providers-docker==1.0.0b1
+```
+
 Run this **once**:
 ```sh
 docker compose up airflow-init
