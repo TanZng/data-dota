@@ -1,61 +1,81 @@
-from pymongo import MongoClient
+import os
 import redis
 from pprint import pprint
+from pymongo import MongoClient
+from geopy.geocoders import Nominatim
+from geopy import distance
 
-REGIONS = {
-  "US WEST": {"sunlight":0, "count":0},
-  "US EAST": {"sunlight":0, "count":0},
-  "EUROPE": {"sunlight":0, "count":0},
-  "SINGAPORE": {"sunlight":0, "count":0},
-  "DUBAI": {"sunlight":0, "count":0},
-  "AUSTRALIA": {"sunlight":0, "count":0},
-  "STOCKHOLM": {"sunlight":0, "count":0},
-  "AUSTRIA": {"sunlight":0, "count":0},
-  "BRAZIL": {"sunlight":0, "count":0},
-  "SOUTHAFRICA": {"sunlight":0, "count":0},
-  "PW TELECOM SHANGHAI": {"sunlight":0, "count":0},
-  "PW UNICOM": {"sunlight":0, "count":0},
-  "CHILE": {"sunlight":0, "count":0},
-  "PERU": {"sunlight":0, "count":0},
-  "INDIA": {"sunlight":0, "count":0},
-  "PW TELECOM GUANGDONG": {"sunlight":0, "count":0},
-  "PW TELECOM ZHEJIANG": {"sunlight":0, "count":0},
-  "JAPAN": {"sunlight":0, "count":0},
-  "PW TELECOM WUHAN": {"sunlight":0, "count":0},
-  "PW UNICOM TIANJIN": {"sunlight":0, "count":0},
-  "TAIWAN": {"sunlight":0, "count":0},
-  "ARGENTINA": {"sunlight":0, "count":0},
-}
+MONTHS = ['Dec',
+ 'Feb',
+ 'Jan',
+ 'Jul',
+ 'Jun',
+ 'Mar',
+ 'May',
+ 'Nov',
+ 'Oct',
+ 'Sep']
+
+REGION_MONTH_KEYS = {}
 
 def main():
-  redisClient = redis.Redis(host='localhost', port=6379, db=1)
-  mongoClient = MongoClient("mongodb://localhost:27017/") #Mongo URI format
-  
-  # get regions from mongo?
-  # REGIONS = ...
+  redis_host = os.getenv('REDIS_HOST', 'localhost')
+  redis_port = os.getenv('REDIS_PORT', '6379')
+  mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+
+  redisClient = redis.Redis(host=redis_host, port=redis_port, db=1)
+  mongoClient = MongoClient(mongo_uri) #Mongo URI format
 
   # get the cities from mongo
-  myDB = mongoClient["MyDB"]
-  citiesData=myDB.sunlight_collection.find({})
+  sunlightDB = mongoClient["SunLightDB"]
+  regionDB = mongoClient["RegionsDB"]
+  
+  citiesData=sunlightDB.sunlight_collection.find({})
+  # get regions from mongo
+  regionsData=sunlightDB.regions_collection.find({})
   # group cities by region (closest)
   for city in citiesData:
     pprint(city)
     print("\n")
-    findRegion(city)
+    findRegion(city, regionsData, redisClient)
   getMonthlyAverage(city)
   # idea: use a Redis sorted set to keep that info
 
   # tag the values
+  return 0
   
-# in redis
+# findRegion checks which regions is the neareat to a certain city and saves
+# it in redis as a 
 # region_name_month : city: value
+# eg. US_WEST_January: { L.A : 200, San Francisco : 100, ... }
+def findRegion(sunlight, regionsData, redisClient):
+  # find the nearest region/country to the given city  
+  near_region = ""
+  distance = float('inf')
 
-def findRegion(city):
-  # find the nearest region/country to the given city
-  pass
+  for region in regionsData:
+    geolocator = Nominatim(user_agent="avg_distance_cities")
+    target_city_coords = geolocator.geocode(sunlight["City"])
+    print((target_city_coords.latitude, target_city_coords.longitude))
+
+    region_city_coords = geolocator.geocode(region["city"])
+    print((region_city_coords.latitude, region_city_coords.longitude))
+
+    distance_tmp = distance.distance(target_city_coords, region_city_coords).km
+
+    if distance_tmp < distance:
+      near_region = region["region_name"]
+      distance = distance_tmp
+  
+  for month in MONTHS:
+    key_name = near_region+"_"+month
+    REGION_MONTH_KEYS[key_name] = 0 
+    redisClient.zadd(key_name, sunlight[month], sunlight["City"])
+
 
 def getMonthlyAverage(city):
-  # get the avg of the region by month
-  pass
-  
+  for k,v in REGION_MONTH_KEYS:
+    print(redisClient.zrange(k, 0, -1))
+ 
+
 main()

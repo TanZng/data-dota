@@ -11,9 +11,10 @@ def upload_to_mongo():
     try:
         hook = MongoHook(mongo_conn_id='mongo_default')
         client = hook.get_conn()
-        db = client.MyDB
+        db = client.SunLightDB
         sunlight_collection=db.sunlight_collection
         print(f"Connected to MongoDB - {client.server_info()}")
+        name : US 
         with open('/opt/airflow/dags/data/sunlight.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             line_count = 0
@@ -54,10 +55,12 @@ task_index_to_mongo = PythonOperator(
 task_get_sunlight_avg = DockerOperator(
     task_id='docker_get_sunlight_avg',
     dag=sunlight_dag,
+    mount_tmp_dir=False,
     image='avg_sunlight_by_region',
     container_name='task_get_sunlight_avg',
     network_mode="data-dota",
     auto_remove=True,
+    # xcom_all=True,
     api_version='auto',
     docker_url="TCP://docker-socket-proxy:2375",
 )
