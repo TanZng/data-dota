@@ -5,16 +5,7 @@ from pymongo import MongoClient
 from geopy.geocoders import Nominatim
 from geopy import distance
 
-MONTHS = ['Dec',
- 'Feb',
- 'Jan',
- 'Jul',
- 'Jun',
- 'Mar',
- 'May',
- 'Nov',
- 'Oct',
- 'Sep']
+MONTHS = ['Dec', 'Feb', 'Jan', 'Jul', 'Jun', 'Mar', 'May', 'Nov', 'Oct', 'Sep']
 
 REGION_MONTH_KEYS = {}
 
@@ -35,8 +26,8 @@ def main():
   regionsData=sunlightDB.regions_collection.find({})
   # group cities by region (closest)
   for city in citiesData:
-    pprint(city)
-    print("\n")
+    # pprint(city)
+    # print("\n")
     findRegion(city, regionsData, redisClient)
   getMonthlyAverage(city)
   # idea: use a Redis sorted set to keep that info
@@ -75,7 +66,7 @@ def findRegion(sunlight, regionsData, redisClient):
 
 def getMonthlyAverage(city):
   for k,v in REGION_MONTH_KEYS:
-    print(redisClient.zrange(k, 0, -1))
+    pprint(redisClient.zrange(k, 0, -1, withscores=True))
  
 
 main()
