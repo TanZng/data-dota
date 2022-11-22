@@ -82,21 +82,21 @@ first_dag = DAG(
     catchup=False,
 )
 
-# download_constant = BashOperator(
-#     task_id = 'download_constant',
-#     dag = first_dag,
-#     bash_command = """curl https://raw.githubusercontent.com/odota/dotaconstants/master/build/region.json --output /opt/airflow/dags/data/region.json && curl https://raw.githubusercontent.com/odota/dotaconstants/master/build/heroes.json --output /opt/airflow/dags/data/heroes.json"""
-# )
+download_constant = BashOperator(
+    task_id = 'download_constant',
+    dag = first_dag,
+    bash_command = """curl https://raw.githubusercontent.com/odota/dotaconstants/master/build/region.json --output /opt/airflow/dags/data/region.json && curl https://raw.githubusercontent.com/odota/dotaconstants/master/build/heroes.json --output /opt/airflow/dags/data/heroes.json"""
+)
 
-# add_constant_to_mongo = PythonOperator(
-#     task_id = "add_constant_to_mongo",
-#     dag = first_dag,
-#     python_callable = add_JSON_file_to_mongo,
-#     op_kwargs={
-#         "region_file":"/opt/airflow/dags/data/region.json",
-#         "heroes_file":"/opt/airflow/dags/data/heroes.json"
-#     }
-# )
+add_constant_to_mongo = PythonOperator(
+    task_id = "add_constant_to_mongo",
+    dag = first_dag,
+    python_callable = add_JSON_file_to_mongo,
+    op_kwargs={
+        "region_file":"/opt/airflow/dags/data/region.json",
+        "heroes_file":"/opt/airflow/dags/data/heroes.json"
+    }
+)
 
 add_city_attribute_to_region_task = PythonOperator(
     task_id = "add_city_attribute_to_region",
@@ -104,6 +104,5 @@ add_city_attribute_to_region_task = PythonOperator(
     python_callable = add_city_attribute_to_region,
 )
 
-add_city_attribute_to_region_task
+download_constant >> add_constant_to_mongo >> add_city_attribute_to_region_task
 
-# download_constant >> add_constant_to_mongo >> 
