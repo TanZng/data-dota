@@ -60,6 +60,7 @@ def select_attributes():
 
 def filter_data():
     import pymongo as pm, pandas as pd, numpy as np
+    import datetime, calendar
 
     mongo_client = pm.MongoClient("mongodb://mongo:27017/")
     wrangling_db = mongo_client['wrangling_match_details']
@@ -70,6 +71,17 @@ def filter_data():
     match_details = match_details[match_details['stomp']!='null'].drop('_id',axis=1)
 
     match_details['duration'] = np.ceil(match_details['duration']/900).apply(lambda x: min(int(x),5))
+
+    constant_db = mongo_client['constant_db']
+
+    regions = pd.DataFrame(constant_db.region_city.find()).set_index('region_id').drop('_id',axis=1)
+
+    match_details = match_details.join(regions,on='region')
+
+    match_details['sunlight'] = match_details.apply(\
+        lambda x: str(x['region_name'])+'_'+calendar.month_abbr[datetime.datetime.fromtimestamp(x['start_time']).month],axis=1)
+
+    match_details = match_details.drop('city_name',axis=1).drop('region_name',axis=1)
 
     match_details_dict = match_details.to_dict(orient='index')
 

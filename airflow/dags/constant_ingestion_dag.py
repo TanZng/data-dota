@@ -64,9 +64,11 @@ def add_city_attribute_to_region():
     ]
     city_df = DataFrame(city_list, columns=["region", "city_name"])
     region_city_df = region_df.join(city_df.set_index("region"))    
-    region_city_coll = constant_db["region_city"]     
-    print(region_city_df)       
-    region_city_coll.insert_one(region_city_df.to_dict(orient="index"))
+    region_city_coll = constant_db["region_city"]
+    region_city_dict = region_city_df.to_dict(orient="index")
+    for index, region_city in region_city_dict.items():
+        region_city['region_id']=int(index)
+        region_city_coll.insert_one(region_city)
 
 default_args_dict = {
     'start_date': datetime.datetime(2022,10,14),
