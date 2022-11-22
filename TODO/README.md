@@ -5,7 +5,7 @@
 - At what day time/season/month matches happen? 
 - At what day time/season/month people stamp or comeback? (data from the dota api) 
 - Spike in win-rate by champion/season/month?
-- Which lineup/other champions favors certain champions?
+- Which lineup (other champions) favors certain champions?
 
 # Whats gonna be done project?
 
