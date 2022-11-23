@@ -218,6 +218,8 @@ After it is up, add a these connections (postgres-conn and mongo-conn):
 docker compose exec airflow-webserver airflow connections add 'postgres_default' --conn-uri 'postgres://user:password@postgres:5432'
 
 docker compose exec airflow-webserver airflow connections add 'mongo_default' --conn-uri 'mongodb://mongo:27017'
+
+docker compose exec airflow-webserver airflow connections add 'neo4j_default' --conn-uri 'bolt://neo:7687'
 ```
 
 Build the image used by the Docker operator
