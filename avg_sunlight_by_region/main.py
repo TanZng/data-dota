@@ -9,6 +9,7 @@ from geopy import distance as geodist
 
 MONTHS = ['Dec', 'Feb', 'Jan', 'Jul', 'Jun', 'Mar', 'May', 'Nov', 'Oct', 'Sep']
 
+REGIONS = {}
 REGION_MONTH_KEYS = {}
 
 def main():
@@ -25,9 +26,12 @@ def main():
   citiesData=sunlightDB.sunlight_collection.find({})
   regionsData=constant_db.region_city.find({})
 
+  for region in regionsData:
+    REGIONS[region["region_name"].replace(" ", "_")] = region["city_name"]
+
   for city in citiesData:
-    findRegion(city, regionsData, redisClient)
-  getMonthlyAverage(city, redisClient)
+    findRegion(city, redisClient)
+  # getMonthlyAverage(city, redisClient)
   # idea: use a Redis sorted set to keep that info
 
   # tag the values
@@ -37,23 +41,20 @@ def main():
 # it in redis as a 
 # region_name_month : city: value
 # eg. US_WEST_January: { L.A : 200, San Francisco : 100, ... }
-def findRegion(sunlight, regionsData, redisClient):
+def findRegion(sunlight, redisClient):
   # find the nearest region/country to the given city  
-  near_region = ""
+  near_region = "US_WEST"
   distance_diff = float('inf')
 
-  target_city_coords = getCoordinates(sunlight["City"])
+  target_city_coords = getCoordinates(sunlight["City"],sunlight["Country"])
 
-  for region in regionsData:
-    region_city_coords = getCoordinates(region["city_name"])
-    
-    print(target_city_coords)
-    print(region_city_coords)
+  for region in REGIONS:
+    region_city_coords = getCoordinates(REGIONS[region])
     distance_tmp = geodist.distance(target_city_coords, region_city_coords).km
     if distance_tmp <= distance_diff:
-      near_region = region["region_name"].replace(" ", "_")
+      near_region = region
       distance_diff = distance_tmp
-  
+  # print("nearest regions: ",near_region)
   for month in MONTHS:
     key_name = near_region+"_"+month
     pprint(key_name)
@@ -66,14 +67,14 @@ def getMonthlyAverage(city, redisClient):
   for k in REGION_MONTH_KEYS:
     print("\n")
     print(k)
-    print(redisClient.zrange(k, 0, -1, withscores=True))
+    pprint(redisClient.zrange(k, 0, -1, withscores=True))
     print("\n")
  
 
-def getCoordinates(city_name):
+def getCoordinates(city_name,country_name=""):
   geolocator = Nominatim(user_agent="avg_distance_cities")
   try:
-    location = geolocator.geocode(city_name)
+    location = geolocator.geocode(city_name, country_name)
     return (location.latitude, location.longitude)
   except:
     return randlatlon1()
