@@ -81,11 +81,10 @@ first_dag = DAG(
     default_args=default_args_dict,
     catchup=False,
 )
-
-download_constant = BashOperator(
-    task_id = 'download_constant',
+download_constant_offline = BashOperator(
+    task_id = 'download_constant_offline',
     dag = first_dag,
-    bash_command = """curl https://raw.githubusercontent.com/odota/dotaconstants/master/build/region.json --output /opt/airflow/dags/data/region.json && curl https://raw.githubusercontent.com/odota/dotaconstants/master/build/heroes.json --output /opt/airflow/dags/data/heroes.json"""
+    bash_command = """curl http://mock-api:5010/region.json --output /opt/airflow/dags/data/region.json && curl http://mock-api:5010/heroes.json --output /opt/airflow/dags/data/heroes.json"""
 )
 
 add_constant_to_mongo = PythonOperator(
@@ -104,4 +103,4 @@ add_city_attribute_to_region_task = PythonOperator(
     python_callable = add_city_attribute_to_region,
 )
 
-download_constant >> add_constant_to_mongo >> add_city_attribute_to_region_task
+download_constant_offline  >> add_constant_to_mongo >> add_city_attribute_to_region_task
