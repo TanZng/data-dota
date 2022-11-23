@@ -31,7 +31,7 @@ def main():
 
   for city in citiesData:
     findRegion(city, redisClient)
-  # getMonthlyAverage(city, redisClient)
+  getMonthlyAverage(city, redisClient)
   # idea: use a Redis sorted set to keep that info
 
   # tag the values
@@ -57,18 +57,23 @@ def findRegion(sunlight, redisClient):
   # print("nearest regions: ",near_region)
   for month in MONTHS:
     key_name = near_region+"_"+month
-    pprint(key_name)
+    #pprint(key_name)
     REGION_MONTH_KEYS[key_name] = 0 
-    redisClient.zadd(key_name, {sunlight["City"]: float(sunlight[month])} )
+    redisClient.zadd("zset:"+key_name, {sunlight["City"]: float(sunlight[month])} )
 
 
 def getMonthlyAverage(city, redisClient):
   print(REGION_MONTH_KEYS)
   for k in REGION_MONTH_KEYS:
-    print("\n")
-    print(k)
-    pprint(redisClient.zrange(k, 0, -1, withscores=True))
-    print("\n")
+    avg = 0
+    namespaceSet = "zset:"+k
+    redisSet = redisClient.zrange(namespaceSet, 0, -1, withscores=True)
+    for current_set in redisSet:
+      avg += current_set[1]
+    avg = avg/len(redisSet)
+    redisClient.set(k, avg)
+    print(redisClient.get(k))
+
  
 
 def getCoordinates(city_name,country_name=""):
