@@ -284,6 +284,17 @@ task_last = DummyOperator(
     depends_on_past=False,
 )
 
-[task_mock_injestions] >> task_select_attributes >> task_filter_data >> task_upload_match_to_fact_table >> task_last
+task_create_region_table_offline = ExternalTaskSensor(
+    task_id='task_create_region_table',
+    poke_interval=60,
+    timeout=180,
+    soft_fail=False,
+    retries=2,
+    external_task_id='add_constant_to_mongo_offline',
+    external_dag_id='constant_ingestion_dag_offline',
+    dag=first_dag
+)
+
+[task_mock_injestions, task_create_region_table_offline] >> task_select_attributes >> task_filter_data >> task_upload_match_to_fact_table >> task_last
 
 task_create_match_table >> [task_create_duration_table, task_upload_region_to_dim_table, task_create_sunlight_level_table >> task_create_sunlight_mapping_table] >> task_filter_data

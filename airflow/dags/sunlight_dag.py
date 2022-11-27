@@ -1,11 +1,11 @@
 import csv
-import time
 import airflow
 from airflow import DAG
 from datetime import timedelta, datetime
 from airflow.operators.bash_operator import BashOperator
 from airflow.providers.mongo.hooks.mongo import MongoHook
 from airflow.operators.python_operator import PythonOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 from airflow.providers.docker.operators.docker import DockerOperator
 
 def upload_to_mongo():
@@ -53,7 +53,16 @@ task_index_to_mongo = PythonOperator(
     python_callable=upload_to_mongo,
 )
 
-id_now = int( time.time() )
+add_city_to_region_external_sensor = ExternalTaskSensor(
+    task_id='add_city_to_region_external_sensor',
+    poke_interval=60,
+    timeout=180,
+    soft_fail=False,
+    retries=2,
+    external_task_id='add_city_attribute_to_region',
+    external_dag_id='constant_ingestion_dag',
+    dag=sunlight_dag
+)
 
 task_get_sunlight_avg = DockerOperator(
     task_id='docker_get_sunlight_avg',
@@ -68,4 +77,4 @@ task_get_sunlight_avg = DockerOperator(
 )
 
 
-task_get_csv >> task_index_to_mongo >> task_get_sunlight_avg
+task_get_csv >> [task_index_to_mongo, add_city_to_region_external_sensor] >> task_get_sunlight_avg

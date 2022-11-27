@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.postgres_operator import PostgresOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 
 def get_match_ids():
 
@@ -403,6 +404,17 @@ task_last = DummyOperator(
     depends_on_past=False,
 )
 
-task_get_match_ids >> task_get_match_details >> task_select_attributes >> task_filter_data >> task_upload_match_to_fact_table >> task_last
+task_create_region_table = ExternalTaskSensor(
+    task_id='task_create_region_table',
+    poke_interval=60,
+    timeout=180,
+    soft_fail=False,
+    retries=2,
+    external_task_id='add_constant_to_mongo',
+    external_dag_id='constant_ingestion_dag',
+    dag=first_dag
+)
+
+task_get_match_ids >> [task_get_match_details, task_create_region_table] >> task_select_attributes >> task_filter_data >> task_upload_match_to_fact_table >> task_last
 
 task_create_match_table >> [task_create_duration_table, task_upload_region_to_dim_table, task_create_sunlight_level_table >> task_create_sunlight_mapping_table] >> task_filter_data

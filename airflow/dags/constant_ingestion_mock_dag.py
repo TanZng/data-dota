@@ -76,20 +76,20 @@ default_args_dict = {
     'retry_delay': datetime.timedelta(seconds=5),
 }
 
-constant_ingestion = DAG(
-    dag_id='constant_ingestion_dag',
+constant_ingestion_offline = DAG(
+    dag_id='constant_ingestion_dag_offline',
     default_args=default_args_dict,
     catchup=False,
 )
 download_constant_offline = BashOperator(
     task_id = 'download_constant_offline',
-    dag = constant_ingestion,
+    dag = constant_ingestion_offline,
     bash_command = """curl http://mock-api:5010/region.json --output /opt/airflow/dags/data/region.json && curl http://mock-api:5010/heroes.json --output /opt/airflow/dags/data/heroes"""
 )
 
-add_constant_to_mongo = PythonOperator(
-    task_id = "add_constant_to_mongo",
-    dag = constant_ingestion,
+add_constant_to_mongo_offline = PythonOperator(
+    task_id = "add_constant_to_mongo_offline",
+    dag = constant_ingestion_offline,
     python_callable = add_JSON_file_to_mongo,
     op_kwargs={
         "region_file":"/opt/airflow/dags/data/region.json",
@@ -97,10 +97,10 @@ add_constant_to_mongo = PythonOperator(
     }
 )
 
-add_city_attribute_to_region_task = PythonOperator(
-    task_id = "add_city_attribute_to_region",
-    dag = constant_ingestion,
+add_city_attribute_to_region_task_offline = PythonOperator(
+    task_id = "add_city_attribute_to_region_task_offline",
+    dag = constant_ingestion_offline,
     python_callable = add_city_attribute_to_region,
 )
 
-download_constant_offline  >> add_constant_to_mongo >> add_city_attribute_to_region_task
+download_constant_offline  >> add_constant_to_mongo_offline >> add_city_attribute_to_region_task_offline

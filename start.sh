@@ -39,7 +39,7 @@ docker compose up airflow-init
 
 docker compose up --build --force-recreate -d
 
-docker compose exec airflow-webserver airflow connections add 'postgres_default' --conn-uri 'postgres://user:password@postgres:5432'
+docker compose exec airflow-webserver airflow connections add 'postgres_default' --conn-uri 'postgres://airflow:airflowpassword@postgres:5432/airflow'
 
 docker compose exec airflow-webserver airflow connections add 'mongo_default' --conn-uri 'mongodb://mongo:27017'
 

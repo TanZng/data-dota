@@ -6,6 +6,7 @@ from datetime import timedelta, datetime
 from airflow.operators.bash_operator import BashOperator
 from airflow.providers.mongo.hooks.mongo import MongoHook
 from airflow.operators.python_operator import PythonOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 from airflow.providers.docker.operators.docker import DockerOperator
 
 def upload_to_mongo_mock():
@@ -53,7 +54,16 @@ task_index_to_mongo_mock = PythonOperator(
     python_callable=upload_to_mongo_mock,
 )
 
-id_now = int( time.time() )
+add_city_to_region_external_sensor_offline = ExternalTaskSensor(
+    task_id='add_city_to_region_external_sensor_offline',
+    poke_interval=60,
+    timeout=180,
+    soft_fail=False,
+    retries=2,
+    external_task_id='add_city_attribute_to_region_task_offline',
+    external_dag_id='constant_ingestion_dag_offline',
+    dag=sunlight_dag_offline
+)
 
 task_get_sunlight_avg_mock = DockerOperator(
     task_id='docker_get_sunlight_avg_mock',
@@ -67,5 +77,4 @@ task_get_sunlight_avg_mock = DockerOperator(
     docker_url="tcp://docker-socket-proxy:2375",
 )
 
-
-task_get_csv_mock >> task_index_to_mongo_mock >> task_get_sunlight_avg_mock
+task_get_csv_mock >> [task_index_to_mongo_mock, add_city_to_region_external_sensor_offline] >> task_get_sunlight_avg_mock
