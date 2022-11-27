@@ -87,7 +87,7 @@ create_match_nodes_task = PythonOperator (
     python_callable = match_nodes,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687",
-        "matchDetails_file":"/opt/airflow/dags/data/match_details_test"
+        "matchDetails_file":"/opt/airflow/dags/data/match_details"
     }
 )
 
@@ -97,7 +97,7 @@ create_hero_nodes_task = PythonOperator (
     python_callable = hero_nodes,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687",
-        "heroes_file":"/opt/airflow/dags/data/heroes.json"
+        "heroes_file":"/opt/airflow/dags/data/heroes"
     }
 )
 
@@ -107,7 +107,7 @@ create_lineup_nodes_task = PythonOperator (
     python_callable = lineup_nodes,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687",
-        "matchDetails_file":"/opt/airflow/dags/data/match_details_test"
+        "matchDetails_file":"/opt/airflow/dags/data/match_details"
     }
 )
 
@@ -117,7 +117,7 @@ create_lineup_to_match_bindings_task = PythonOperator (
     python_callable = lineup_to_match_binding,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687",
-        "matchDetails_file":"/opt/airflow/dags/data/match_details_test"
+        "matchDetails_file":"/opt/airflow/dags/data/match_details"
     }
 )
 

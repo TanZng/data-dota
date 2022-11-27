@@ -4,6 +4,7 @@ import json
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 import pymongo as py
+import pandas as pd
 
 def download_data(**context):
     myclient = py.MongoClient("mongodb://mongo:27017/")
@@ -11,10 +12,8 @@ def download_data(**context):
     match_details_coll = match_details_db["match_details_filtered"]
     constant_db = myclient["constant_db"]
     heros_coll = constant_db["heroes"]
-    with open(context["match_details_file"], 'w') as match_details_file:
-        match_details_file.write(match_details_coll.find({}))
-    with open(context["heroes_file"], 'w') as heroes_files:
-        heroes_files.write(heros_coll.find({}))
+    pd.DataFrame(match_details_coll.find({})).to_json(context["match_details_file"], orient='index')
+    pd.DataFrame(heros_coll.find({})).to_json(context["heroes_file"], orient='index')
 
 
 
