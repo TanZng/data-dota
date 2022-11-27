@@ -1,2 +1,6 @@
 *
 !.gitignore
+!match_details_stash/
+!match_details_stash/*
+match_details_stash/test.py
+match_details_stash/matchDetails*
