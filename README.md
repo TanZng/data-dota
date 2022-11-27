@@ -3,7 +3,7 @@
 ## Table of contents
 - [Report: Data dota](#report-data-dota)
   - [Table of contents](#table-of-contents)
-- [Summary](#summary)
+- [Introduction](#introduction)
 - [Pipeline](#pipeline)
   - [Ingestion](#ingestion)
   - [Staging](#staging)
@@ -17,17 +17,16 @@
   - [Linux / MacOS](#linux--macos)
   - [Windows](#windows)
 
-# Summary
+# Introduction
 
 Questions formulated:
 - Does sunlight affect match stamp or comeback?
 - Spike in win-rate by hero/season/month?
 - Which lineup (other heroes) favors certain champions?
 
+# Pipeline
 
 ![Pipeline overview](assets/DataPipeline.png)
-
-# Pipeline
 
 ## Ingestion
 
@@ -45,13 +44,52 @@ The CSV and JSON files were obtained throw a `curl`.
 
 ### Cleansing
 
+> Explain how cities are clean
+
 ### Transformations
+
+> Explain another transformation
+
+Also the sunlight by city per month data is indexed to MongoDB, since it will be easy to manipulate in further steps as a collection than a CSV.
 
 ### Enrichments
 
+> Explain a Enrichment
+
+Another important enrichments that happen is to the regions with their average sunlight per month. To make this happen we developed a python script and containerized it, it can be find in the ``avg_sunlight_by_region/`` folder. Then this script is run by the ``DockerOperator`` from Airflow. 
+
+The DockerOperator allows AirFlow to run Docker containers. We decide to get this task done using Docker to avoid run a huge script using the ``PythonOperator``. 
+
+To obtain the average per month by region first we get from MongoDB the regions and a city of each one. Then from MongoDB we get the sunlight average by month of all the cities that were available. Then we relate all the cities from the sunlight data to the nearest region in a Redis sorted set, with the next structure:
+
+```bash
+zset:REGION_Month: { City1: XXX, City2: XXX, ... }
+# e.g
+# zset:US_EAST_January: { Miami: 281, NYC: 149, ... }
+```
+
+To define to which region a city belongs, we get the coordinates of the cities and calculating the distance between them using the ``geopy`` library.
+
+Once this is done, for each ``zset`` we calculate the average and keep the results in Redis with this structure:
+```bash
+REGION_Month: XXX
+# e.g
+# US_EAST_January: 210
+```
+
+We use redis so the next task can get this values from Redis.
+
 ## Production
 
+> Explain why star schema
+
+> Explain why graph schema
+
 ### Queries
+
+For visualization we use:
+- MotorAdmin for the star schema - http://localhost:3020/
+- NeoDash for the graph schema - http://localhost:5005/
 
 # Conclusion
 
@@ -125,3 +163,11 @@ Build the image used by the Docker operator
 ```sh
 docker build -f ./avg_sunlight_by_region/Dockerfile -t avg_sunlight_by_region ./avg_sunlight_by_region
 ```
+
+Visit:
+
+| Service    | URL                    |
+| ---------- | ---------------------- |
+| Airflow    | http://localhost:8080/ |
+| MotorAdmin | http://localhost:3020/ |
+| NeoDash    | http://localhost:5005/ |
