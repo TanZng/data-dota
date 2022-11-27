@@ -7,7 +7,6 @@ _AIRFLOW_WWW_USER_PASSWORD=airflow
 AIRFLOW_UID=$(id -u)
 AIRFLOW_GID=0
 _PIP_ADDITIONAL_REQUIREMENTS=xlsx2csv==0.7.8 faker==8.12.1 apache-airflow-providers-mongo==2.3.1 apache-airflow-providers-docker==2.1.0
-
 EOF
 "
 
@@ -25,7 +24,6 @@ services:
     privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-
 EOF
 "
 
