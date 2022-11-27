@@ -13,6 +13,7 @@
   - [Production](#production)
     - [Queries](#queries)
 - [Conclusion](#conclusion)
+- [Project Submission Checklist](#project-submission-checklist)
 - [How to run?](#how-to-run)
   - [Automatic](#automatic)
   - [Manual](#manual)
@@ -70,6 +71,8 @@ zset:REGION_Month: { City1: XXX, City2: XXX, ... }
 
 To define to which region a city belongs, we get the coordinates of the cities and calculating the distance between them using the ``geopy`` library.
 
+> Its important to mention that ``geopy`` has a limit to query the coordinates, so when this is reach ot theres no internet connection a random coordinate is assignee to a city, so the pipeline continues working fine.
+
 Once this is done, for each ``zset`` we calculate the average and keep the results in Redis with this structure:
 ```bash
 REGION_Month: XXX
@@ -92,6 +95,21 @@ For visualization we use:
 - NeoDash for the graph schema - http://localhost:5005/
 
 # Conclusion
+
+
+# Project Submission Checklist
+
+- [x] Repository with the code, well documented
+- [x] Docker-compose file to run the environment
+- [x] Detailed description of the various steps
+- [x] Report with the project design steps divided per area
+- [x] Example dataset: the project testing should work offline, i.e., you need to have some sample data points.
+- [x] Slides for the project presentation. You can do them too in markdown too.
+- [x] Use airflow + pandas + mongodb + postgres + neo4j
+- [x] Using REDIS for speeding up steps
+- [x] STAR schema design includes maintenance upon updates
+- [x] Creativity: data viz, serious analysis, performance analysis, extensive cleansing.
+- [x] Launching docker containers via airflow to schedule job
 
 # How to run?
 
