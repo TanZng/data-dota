@@ -12,7 +12,7 @@ EOF
 "
 
 sh -c "
-cat <<EOF >>./.env
+cat <<EOF >>./docker-socket-proxy.yaml
 services:
   docker-socket-proxy:
     image: tecnativa/docker-socket-proxy:0.1.1
