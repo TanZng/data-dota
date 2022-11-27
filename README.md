@@ -21,9 +21,9 @@
 # Introduction
 
 Questions formulated:
-- Does sunlight affect match stamp or comeback?
+- Does sunlight affect how likely a match will feature a stomp or a comeback?
 - Spike in win-rate by hero/season/month?
-- Which lineup (other heroes) favors certain champions?
+- Which lineup (other heroes) favors certain heroes?
 
 # Pipeline
 
@@ -31,15 +31,17 @@ Questions formulated:
 
 ## Ingestion
 
-For this projects we count with 4 datasources:
+For this projects we utilize 4 datasources:
 1. Oficial Dota API
 2. Open Dota API
 3. Sunlight by city per month CSV
 4. Dota constants in JSON
 
-The data from the APIs was obtain by doing calls using Python.
+The data from the APIs are obtain by doing calls using Python.
 
-The CSV and JSON files were obtained throw a `curl`.
+The CSV and JSON files are obtained with a `curl` bash command.
+
+The raw data injested are then stored in mongodb for ease of access.
 
 ## Staging
 
@@ -47,11 +49,44 @@ The CSV and JSON files were obtained throw a `curl`.
 
 One example of the cleansing step is the way we process the Dota region and sunlight cities to make it correspond. The original data we downloaded has a big issue concerning the location : Dota data was ordered by region (meaning each place where there is a dota server) and sunlight data by cities. So we first have to clean the Dota region name into something more obvious and then binding each Dota region with one or more cities from sunlight data. So we added an attribute to the original Dota region DB : cities. This is done manually because the amount of data is not big enough to make the automatism process relevant. One that was done, it was just about joining the two tables.
 
+For the match details data, the raw JSON returned by the OpenDota API is enourmous: aside from the data we utilize in our project, there are various other useful data that are not analysed (like the game mode, whether or not a match is a tournament, the ending status of the two teams' buildings, etc), as well as a lot of unimportant data (in particular the cosmetics equipped by a player, and the duplication of match details in each player details in the match, expanding the raw data by 10 times). The first step is then to select only the attributes that we need.
+
 ### Transformations
 
 > Explain another transformation
 
 Also the sunlight by city per month data is indexed to MongoDB, since it will be easy to manipulate in further steps as a collection than a CSV.
+
+As for the match details data, now reduced to a select few attributes, we must first filter out any matches that have none of the analytical data that we need, such as the `stomp` as `comeback` attributes.
+
+Afterwards, to better categorize the dimension attributes, we transform certain dimensions from raw numerical values to categories. This applies to the Duration dimension and the Sunlight dimension:
+- We categorize the Duration dimension into 5 categories:
+  - Very short: matches that end in under 15 minutes
+  - Short: matches lasting between 15 and 30 minutes
+  - Medium: matches lasting between 30 and 45 minutes
+  - Long: matches lasting between 45 minutes and 1 hour
+  - Very long: matches that go on for more than 1 hour
+  
+As all duration is at least a positive number, and the categories are all spaced out by 15 minutes, the transformation can be done directly with a calculation:
+
+```bash
+np.ceil(match_details['duration']/900).apply(lambda x: min(int(x),5))
+```
+
+- Likewise, the Sunlight dimension is also divided into 5 categories:
+  - Very dark: months that have less than 85% of the yearly average sunlight
+  - Dark: months having between 85% and 95% of the yearly average sunlight
+  - Normal: months having between 95% and 105% of the yearly average sunlight
+  - Bright: months having between 105% and 115% of the yearly average sunlight
+  - Very bright: months that have more than 115% of the yearly average sunlight
+
+The calculation here is slight more tricky, but nothing can't be solved with a little bit of maths:
+
+```bash
+np.ceil((min(max((monthly_sunlight[month_name]/average),0.85),1.3)-0.75)/0.1)
+```
+
+In short, the operation rescales the percentage of between monthly sunlight and yearly average from [0,+infinite] to [0.1,0.5] with the min/max operations, then multiplies the value by 10 and getting the integer ceiling, and we end up with integers between `1` and `5`
 
 ### Enrichments
 
@@ -80,11 +115,15 @@ REGION_Month: XXX
 # US_EAST_January: 210
 ```
 
-We use redis so the next task can get this values from Redis.
+We use redis so the next task can get these values from Redis.
 
 ## Production
 
-> Explain why star schema
+For the first question that we have (concerning the gameplay overall gameplay performance in each match), the data naturally fit into a star schema:
+- We have a central Fact table that contains all the matches, having measures being a stomp value and a comeback value
+- The Duration, Sunlight level, Region, Timestamp axes along which we want to analyse, can all be made into dimension tables
+
+As such, we decided to create a star schema for this part of the analytical question. The Duration and Sunlight tables can be generated easily with just an ID and a name for each categories. The fact table can be uploaded directly after the wrangling process: we already transformed the raw data for `duration` into IDs that point to the Duration table. The main issue is linking each match to a level of sunlight (Sunlight_level table). In order to do this, we created an ID in the fact table that is the `REGION_Month` of where and when the match was played. We then created a mapping table `Sunlight_map`, which points each `REGION_Month` to a corresponding `Sunlight_level`. In doing so, the star schema becomes a snowflake schema (albeit in just this dimension)
 
 In order to represent the impact of the lineup (5 heroes) in a match, we were looking about something which bind each heroes to its lineup, and the each lineup to the match. So naturally we chose a graph schema edited with Neo4j data system.
 The way we proceed is quite simple. First we created each node. Match nodes have just one attribute (its id) and were created according to the match_details DB staged in MongoDB (post wrangling process). Hero nodes have two attributes (its id and its name) and were created with the heroes DB also in MongoDB. For Lineup nodes, it was a bit more tricky : as we didn't want to create all the lineup possible with all the heroes (which would represent approximately h*(h-1)(h-2)(h-3)(h-4) possibilities with h the number of heroes) because only few of them are used, we decided to create just the lineup used for matches we want to analyse. What's more, we retrieve the radiant_win attribute for each match to know which team won (and so the other lost). So each Lineup nodes have 7 attributes (ids of the five heroes which are belonging to this lineup, the match id this lineup is referring to and the name of the team (radiant or dire)).
@@ -93,11 +132,18 @@ Than we created the bindings between heroes and lineup (just a cypher statement 
 ### Queries
 
 For visualization we use:
-- MotorAdmin for the star schema - http://localhost:3020/
+- A Power BI dashboard for the star schema - /dashboard/OT_Star_schema.pbix
 - NeoDash for the graph schema - http://localhost:5005/
 
-# Conclusion
+# Conclusion & (potential) furture developments
 
+
+
+The match details wrangling process can maybe be sped up by using redis as an intermediate to store the match_details while selecting attributes/filtering/transforming data. Currently the data are stored in mongoDB and processed directly in memory, but this method might not work if the data amount becomes too big. We can also process a small portion of data at a time.
+
+The star schema can be optimized by making the wrangling process directly link each match to a sunlight level, instead of creating a `REGION_Month` ID and an intermediate mapping table. This will make the wrangling process a bit heavier on the processing side, but it will greatly reduce the processing needed when we extract the data and run queries.
+
+Many other dimensions can be added in order to enrich our analytics: creating a Gamemode dimension, a Patch dimension, or utilizing other analytical data such as the gold income of each player/hero in the graph schema.
 
 # Project Submission Checklist
 
