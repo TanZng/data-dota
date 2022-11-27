@@ -45,7 +45,7 @@ The CSV and JSON files were obtained throw a `curl`.
 
 ### Cleansing
 
-> Explain how cities are clean
+One example of the cleansing step is the way we process the Dota region and sunlight cities to make it correspond. The original data we downloaded has a big issue concerning the location : Dota data was ordered by region (meaning each place where there is a dota server) and sunlight data by cities. So we first have to clean the Dota region name into something more obvious and then binding each Dota region with one or more cities from sunlight data. So we added an attribute to the original Dota region DB : cities. This is done manually because the amount of data is not big enough to make the automatism process relevant. One that was done, it was just about joining the two tables.
 
 ### Transformations
 
@@ -86,7 +86,9 @@ We use redis so the next task can get this values from Redis.
 
 > Explain why star schema
 
-> Explain why graph schema
+In order to represent the impact of the lineup (5 heroes) in a match, we were looking about something which bind each heroes to its lineup, and the each lineup to the match. So naturally we chose a graph schema edited with Neo4j data system.
+The way we proceed is quite simple. First we created each node. Match nodes have just one attribute (its id) and were created according to the match_details DB staged in MongoDB (post wrangling process). Hero nodes have two attributes (its id and its name) and were created with the heroes DB also in MongoDB. For Lineup nodes, it was a bit more tricky : as we didn't want to create all the lineup possible with all the heroes (which would represent approximately h*(h-1)(h-2)(h-3)(h-4) possibilities with h the number of heroes) because only few of them are used, we decided to create just the lineup used for matches we want to analyse. What's more, we retrieve the radiant_win attribute for each match to know which team won (and so the other lost). So each Lineup nodes have 7 attributes (ids of the five heroes which are belonging to this lineup, the match id this lineup is referring to and the name of the team (radiant or dire)).
+Than we created the bindings between heroes and lineup (just a cypher statement according to the hero id) and between lineup and matches.
 
 ### Queries
 
