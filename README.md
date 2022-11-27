@@ -14,8 +14,8 @@
     - [Queries](#queries)
 - [Conclusion](#conclusion)
 - [How to run?](#how-to-run)
-  - [Linux / MacOS](#linux--macos)
-  - [Windows](#windows)
+  - [Automatic](#automatic)
+  - [Manual](#manual)
 
 # Introduction
 
@@ -95,7 +95,9 @@ For visualization we use:
 
 # How to run?
 
-## Linux / MacOS
+## Automatic
+
+> Works with Linux and MacOS
 
 Run
 
@@ -103,16 +105,16 @@ Run
 ./start.sh
 ```
 
-## Windows
+## Manual
 
-Create a `.env` file
+Create a `.env` file with these values:
 
-> Get the AIRFLOW_UID using `id -u`
+> ⚠️ IMPORTANT: Get the AIRFLOW_UID using `id -u`
 
 ```s
 _AIRFLOW_WWW_USER_USERNAME=airflow
 _AIRFLOW_WWW_USER_PASSWORD=airflow
-AIRFLOW_UID=1000
+AIRFLOW_UID=
 AIRFLOW_GID=0
 _PIP_ADDITIONAL_REQUIREMENTS=xlsx2csv==0.7.8 faker==8.12.1 py2neo==2021.2.3 apache-airflow-providers-mongo==2.3.1 apache-airflow-providers-docker==2.1.0
 ```
