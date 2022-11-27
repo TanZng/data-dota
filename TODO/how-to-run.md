@@ -23,8 +23,6 @@ services:
     restart: always
     privileged: true
     # Windows
-    ports:
-      - 2375:2375
     volumes:
       - type: bind
         source: /var/run/docker.sock
