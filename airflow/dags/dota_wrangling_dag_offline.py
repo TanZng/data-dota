@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.postgres_operator import PostgresOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 
 def mock_injestions(stash_file):
     import json, pymongo as pm

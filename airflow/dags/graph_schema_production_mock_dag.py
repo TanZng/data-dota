@@ -3,7 +3,7 @@ import datetime
 import json
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 
 def match_nodes(**context):
     heroes_lineup_graph = Graph(context["neo4j_DB"])
@@ -75,15 +75,15 @@ default_args_dict = {
     'retry_delay': datetime.timedelta(seconds=5),
 }
 
-neo4j_production = DAG(
-    dag_id='neo4j_production_dag',
+neo4j_production_dag_offline = DAG(
+    dag_id='neo4j_production_dag_offline',
     default_args=default_args_dict,
     catchup=False,
 )
 
 create_match_nodes_task = PythonOperator (
     task_id = "match_nodes",
-    dag = neo4j_production,
+    dag = neo4j_production_dag_offline,
     python_callable = match_nodes,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687",
@@ -93,7 +93,7 @@ create_match_nodes_task = PythonOperator (
 
 create_hero_nodes_task = PythonOperator (
     task_id = "hero_nodes",
-    dag = neo4j_production,
+    dag = neo4j_production_dag_offline,
     python_callable = hero_nodes,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687",
@@ -103,7 +103,7 @@ create_hero_nodes_task = PythonOperator (
 
 create_lineup_nodes_task = PythonOperator (
     task_id = "lineup_nodes",
-    dag = neo4j_production,
+    dag = neo4j_production_dag_offline,
     python_callable = lineup_nodes,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687",
@@ -113,7 +113,7 @@ create_lineup_nodes_task = PythonOperator (
 
 create_lineup_to_match_bindings_task = PythonOperator (
     task_id = "lineup_to_match_bindings",
-    dag = neo4j_production,
+    dag = neo4j_production_dag_offline,
     python_callable = lineup_to_match_binding,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687",
@@ -123,11 +123,33 @@ create_lineup_to_match_bindings_task = PythonOperator (
 
 create_hero_to_lineup_bindings_task = PythonOperator (
     task_id = "heroes_to_lineup_bindings",
-    dag = neo4j_production,
+    dag = neo4j_production_dag_offline,
     python_callable = heroe_to_lineup_bindings,
     op_kwargs={
         "neo4j_DB":"bolt://neo:7687"
     }
 )
 
-create_match_nodes_task >> create_hero_nodes_task >> create_lineup_nodes_task >> create_hero_to_lineup_bindings_task >> create_lineup_to_match_bindings_task
+task_create_region_table_offline = ExternalTaskSensor(
+    task_id='task_create_region_table',
+    poke_interval=60,
+    timeout=180,
+    soft_fail=False,
+    retries=2,
+    external_task_id='add_constant_to_mongo_offline',
+    external_dag_id='constant_ingestion_dag_offline',
+    dag=neo4j_production_dag_offline
+)
+
+task_filter_data_offline = ExternalTaskSensor(
+    task_id='task_filter_data_offline',
+    poke_interval=60,
+    timeout=180,
+    soft_fail=False,
+    retries=2,
+    external_task_id='filter_data',
+    external_dag_id='dota_wrangling_dag_offline',
+    dag=neo4j_production_dag_offline
+)
+
+[task_create_region_table_offline, task_filter_data_offline] >> create_match_nodes_task >> create_hero_nodes_task >> create_lineup_nodes_task >> create_hero_to_lineup_bindings_task >> create_lineup_to_match_bindings_task

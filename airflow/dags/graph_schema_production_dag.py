@@ -3,6 +3,7 @@ import datetime
 import json
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 import pymongo as py
 import pandas as pd
 
@@ -152,4 +153,26 @@ create_hero_to_lineup_bindings_task = PythonOperator (
     }
 )
 
-create_match_nodes_task >> create_hero_nodes_task >> create_lineup_nodes_task >> create_hero_to_lineup_bindings_task >> create_lineup_to_match_bindings_task
+task_create_region_table = ExternalTaskSensor(
+    task_id='task_create_region_table',
+    poke_interval=60,
+    timeout=180,
+    soft_fail=False,
+    retries=2,
+    external_task_id='add_constant_to_mongo',
+    external_dag_id='constant_ingestion_dag',
+    dag=neo4j_production
+)
+
+task_filter_data = ExternalTaskSensor(
+    task_id='task_filter_data',
+    poke_interval=60,
+    timeout=180,
+    soft_fail=False,
+    retries=2,
+    external_task_id='filter_data',
+    external_dag_id='dota_wrangling_dag',
+    dag=neo4j_production
+)
+
+[task_create_region_table, task_filter_data] >> create_match_nodes_task >> create_hero_nodes_task >> create_lineup_nodes_task >> create_hero_to_lineup_bindings_task >> create_lineup_to_match_bindings_task
