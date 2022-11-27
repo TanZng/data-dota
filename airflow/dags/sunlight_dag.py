@@ -68,4 +68,4 @@ task_get_sunlight_avg = DockerOperator(
 )
 
 
-# task_get_csv >> task_index_to_mongo >> task_get_sunlight_avg
+task_get_csv >> task_index_to_mongo >> task_get_sunlight_avg
