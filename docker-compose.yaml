@@ -63,22 +63,6 @@ services:
         - "7687:7687"
     volumes:
       - ./tmp/neo4j-data:/data
-  postgres2:
-    image: postgres:13.8-bullseye
-    hostname: postgres2
-    container_name: postgres2
-    restart: always
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - ./tmp/postgres-data2:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 5s
-      retries: 5
   neo-dash:
     image: nielsdejong/neodash:2.2.0
     hostname: neodash
@@ -86,23 +70,6 @@ services:
     restart: always
     ports:
         - "5005:5005"
-  motor-admin:
-    image: 'motoradmin/motoradmin:0.3.16'
-    hostname: motor-admin
-    container_name: motor-admin
-    ports:
-      - '3020:3000'
-    volumes:
-      - ./tmp/motor-admin-data:/data
-      # - type: bind
-      #   source: ./tmp/motor-admin
-      #   target: /data
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      SECRET_KEY_BASE:
-      DATABASE_URL: postgresql://postgres:postgres@postgres2:5432/postgres
   mock-api:
     build:
       context: ./mock-api
