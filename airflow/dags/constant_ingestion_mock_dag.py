@@ -84,7 +84,7 @@ constant_ingestion = DAG(
 download_constant_offline = BashOperator(
     task_id = 'download_constant_offline',
     dag = constant_ingestion,
-    bash_command = """curl http://mock-api:5010/region.json --output /opt/airflow/dags/data/region.json && curl http://mock-api:5010/heroes.json --output /opt/airflow/dags/data/heroes.json"""
+    bash_command = """curl http://mock-api:5010/region.json --output /opt/airflow/dags/data/region.json && curl http://mock-api:5010/heroes.json --output /opt/airflow/dags/data/heroes"""
 )
 
 add_constant_to_mongo = PythonOperator(
@@ -93,7 +93,7 @@ add_constant_to_mongo = PythonOperator(
     python_callable = add_JSON_file_to_mongo,
     op_kwargs={
         "region_file":"/opt/airflow/dags/data/region.json",
-        "heroes_file":"/opt/airflow/dags/data/heroes.json"
+        "heroes_file":"/opt/airflow/dags/data/heroes"
     }
 )
 

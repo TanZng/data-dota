@@ -3,23 +3,28 @@ import datetime
 import json
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+import pymongo as py
+
+def download_data(**context):
+    myclient = py.MongoClient("mongodb://mongo:27017/")
+    match_details_db = myclient["wrangling_match_details"]
+    match_details_coll = match_details_db["match_details_filtered"]
+    constant_db = myclient["constant_db"]
+    heros_coll = constant_db["heroes"]
+    with open(context["match_details_file"], 'w') as match_details_file:
+        match_details_file.write(match_details_coll.find({}))
+    with open(context["heroes_file"], 'w') as heroes_files:
+        heroes_files.write(heros_coll.find({}))
 
 
-# def test_neo4j(**context):
-#     heroes_lineup_graph = Graph(context["neo4j_DB"])
-
-#     tx = heroes_lineup_graph.begin()
-#     for name in ["Alice", "Bob", "Carol"]:
-#         tx.run("CREATE ((person:Person{name:$name})-[:JOB]->(job:Job{label:'developper'})) RETURN person, job", name=name)
-#     tx.commit()
 
 def match_nodes(**context):
     heroes_lineup_graph = Graph(context["neo4j_DB"])
     tx = heroes_lineup_graph.begin()
     with open(context["matchDetails_file"]) as matchDetails_json:
         matchDetails_dict = json.load(matchDetails_json)
-        for match in matchDetails_dict:
-            tx.run("CREATE (m:Match{id:$id_match}) RETURN m", id_match=match.get("match_id"))
+    for match in matchDetails_dict:
+        tx.run("CREATE (m:Match{id:$id_match}) RETURN m", id_match=match.get("match_id"))
     tx.commit()
 
 def hero_nodes(**context):
@@ -27,10 +32,10 @@ def hero_nodes(**context):
     tx = heroes_lineup_graph.begin()
     with open(context["heroes_file"]) as heroes_json:
         heroes_dict = json.load(heroes_json)
-        for key in heroes_dict:
-            id = heroes_dict.get(key).get("id")
-            name = heroes_dict.get(key).get("name")
-            tx.run("CREATE (h:Heroe{id:$id_heroe, name:$name_heroe}) RETURN h", id_heroe= id, name_heroe = name)
+    for key in heroes_dict:
+        id = heroes_dict.get(key).get("id")
+        name = heroes_dict.get(key).get("name")
+        tx.run("CREATE (h:Heroe{id:$id_heroe, name:$name_heroe}) RETURN h", id_heroe= id, name_heroe = name)
     tx.commit()
 
 def lineup_nodes(**context):
@@ -89,70 +94,63 @@ neo4j_production = DAG(
     catchup=False,
 )
 
-# create_match_nodes_task = PythonOperator (
-#     task_id = "match_nodes",
-#     dag = neo4j_production,
-#     python_callable = match_nodes,
-#     op_kwargs={
-#         "neo4j_DB":"bolt://neo:7687",
-#         "matchDetails_file":"/opt/airflow/dags/data/match_details_test",
-#         "heroes_file":"/opt/airflow/dags/data/heroes.json"
-#     }
-# )
+download_data_from_mongo = PythonOperator (
+    task_id = "download_data",
+    dag = neo4j_production,
+    python_callable = download_data,
+    op_kwargs={
+        "match_details_file":"/opt/airflow/dags/data/match_details",
+        "heroes_file":"/opt/airflow/dags/data/heroes"
+    }
+)
 
-# create_hero_nodes_task = PythonOperator (
-#     task_id = "hero_nodes",
-#     dag = neo4j_production,
-#     python_callable = hero_nodes,
-#     op_kwargs={
-#         "neo4j_DB":"bolt://neo:7687",
-#         "matchDetails_file":"/opt/airflow/dags/data/match_details_test",
-#         "heroes_file":"/opt/airflow/dags/data/heroes.json"
-#     }
-# )
+create_match_nodes_task = PythonOperator (
+    task_id = "match_nodes",
+    dag = neo4j_production,
+    python_callable = match_nodes,
+    op_kwargs={
+        "neo4j_DB":"bolt://neo:7687",
+        "matchDetails_file":"/opt/airflow/dags/data/match_details"
+    }
+)
 
-# create_lineup_nodes_task = PythonOperator (
-#     task_id = "lineup_nodes",
-#     dag = neo4j_production,
-#     python_callable = lineup_nodes,
-#     op_kwargs={
-#         "neo4j_DB":"bolt://neo:7687",
-#         "matchDetails_file":"/opt/airflow/dags/data/match_details_test",
-#         "heroes_file":"/opt/airflow/dags/data/heroes.json"
-#     }
-# )
+create_hero_nodes_task = PythonOperator (
+    task_id = "hero_nodes",
+    dag = neo4j_production,
+    python_callable = hero_nodes,
+    op_kwargs={
+        "neo4j_DB":"bolt://neo:7687",
+        "heroes_file":"/opt/airflow/dags/data/heroes"
+    }
+)
 
-# create_lineup_to_match_bindings_task = PythonOperator (
-#     task_id = "lineup_to_match_bindings",
-#     dag = neo4j_production,
-#     python_callable = lineup_to_match_binding,
-#     op_kwargs={
-#         "neo4j_DB":"bolt://neo:7687",
-#         "matchDetails_file":"/opt/airflow/dags/data/match_details_test",
-#         "heroes_file":"/opt/airflow/dags/data/heroes.json"
-#     }
-# )
+create_lineup_nodes_task = PythonOperator (
+    task_id = "lineup_nodes",
+    dag = neo4j_production,
+    python_callable = lineup_nodes,
+    op_kwargs={
+        "neo4j_DB":"bolt://neo:7687",
+        "matchDetails_file":"/opt/airflow/dags/data/match_details"
+    }
+)
+
+create_lineup_to_match_bindings_task = PythonOperator (
+    task_id = "lineup_to_match_bindings",
+    dag = neo4j_production,
+    python_callable = lineup_to_match_binding,
+    op_kwargs={
+        "neo4j_DB":"bolt://neo:7687",
+        "matchDetails_file":"/opt/airflow/dags/data/match_details"
+    }
+)
 
 create_hero_to_lineup_bindings_task = PythonOperator (
     task_id = "heroes_to_lineup_bindings",
     dag = neo4j_production,
     python_callable = heroe_to_lineup_bindings,
     op_kwargs={
-        "neo4j_DB":"bolt://neo:7687",
-        "matchDetails_file":"/opt/airflow/dags/data/match_details_test",
-        "heroes_file":"/opt/airflow/dags/data/heroes.json"
+        "neo4j_DB":"bolt://neo:7687"
     }
 )
 
-create_hero_to_lineup_bindings_task
-
-# 1) créer noeuds matchs : récupérer dans matchDetails (JSON), l'attribut match_id => "CREATE (m:Match{id:$id_match}) RETURN m", id_match=
-# 2) créer noeuds hero : récupérer dans heroes (JSON), les attributs id et name => "CREATE (h:Heroe{id:$id_heroe, name:$name_heroe}) RETURN h", id_heroe= , name_heroe
-# 3) créer lien héro to lineup : récupérer attributs dans matchDetails (JSON) players (tableau) => isRadiant (boolean) / hero_id => for each player du tableau players, 
-# si isRadiant est True, ajoute heroe_id au lineup_radiant_tmp, sinon ajoute au lineup_dire_tmp; puis crée noeuds lineup + liens avec les héros
-# 4) créer lien lineup to match (WIN/LOST) : 
-
-# 5612 MATCHS DANS match_details_test
-# le fichier match_details_test est une liste contenant 5612 python dict représentant chacun un match
-
-# Le fichier heroes.json est un python dict
+create_match_nodes_task >> create_hero_nodes_task >> create_lineup_nodes_task >> create_hero_to_lineup_bindings_task >> create_lineup_to_match_bindings_task
