@@ -74,9 +74,7 @@ services:
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - type: bind
-        source: ./tmp/postgres-data2
-        target: /var/lib/postgresql/data
+      - ./tmp/postgres-data2:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
@@ -95,9 +93,10 @@ services:
     ports:
       - '3020:3000'
     volumes:
-      - type: bind
-        source: ./tmp/motor-admin
-        target: /data
+      - ./tmp/motor-admin-data:/data
+      # - type: bind
+      #   source: ./tmp/motor-admin
+      #   target: /data
     depends_on:
       postgres:
         condition: service_healthy
