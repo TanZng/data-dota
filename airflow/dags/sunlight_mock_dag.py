@@ -1,5 +1,6 @@
-import airflow
 import csv
+import time
+import airflow
 from airflow import DAG
 from datetime import timedelta, datetime
 from airflow.operators.bash_operator import BashOperator
@@ -7,7 +8,7 @@ from airflow.providers.mongo.hooks.mongo import MongoHook
 from airflow.operators.python_operator import PythonOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 
-def upload_to_mongo():
+def upload_to_mongo_mock():
     try:
         hook = MongoHook(mongo_conn_id='mongo_default')
         client = hook.get_conn()
@@ -32,38 +33,39 @@ sunlight_args_dict = {
     'retry_delay': timedelta(minutes=2),
 }
 
-sunlight_dag = DAG(
-    dag_id='sunlight_dag',
+sunlight_dag_offline = DAG(
+    dag_id='sunlight_dag_offline',
     default_args=sunlight_args_dict,
     catchup=False,
 )
 
 # Downloading a file from an API/endpoint?
 
-task_offline_get_csv = BashOperator(
-    task_id='offline_get_csv',
-    dag=sunlight_dag,
+task_get_csv_mock = BashOperator(
+    task_id='offline_get_csv_mock',
+    dag=sunlight_dag_offline,
     bash_command="curl http://mock-api:5010/sunlight.csv --output /opt/airflow/dags/data/sunlight.csv",
 )
 
-task_index_to_mongo = PythonOperator(
-    task_id='index_sunlight_to_mongo',
-    dag=sunlight_dag,
-    python_callable=upload_to_mongo,
+task_index_to_mongo_mock = PythonOperator(
+    task_id='index_sunlight_to_mongo_mock',
+    dag=sunlight_dag_offline,
+    python_callable=upload_to_mongo_mock,
 )
 
-task_get_sunlight_avg = DockerOperator(
-    task_id='docker_get_sunlight_avg',
-    dag=sunlight_dag,
+id_now = int( time.time() )
+
+task_get_sunlight_avg_mock = DockerOperator(
+    task_id='docker_get_sunlight_avg_mock',
+    dag=sunlight_dag_offline,
     mount_tmp_dir=False,
     image='avg_sunlight_by_region',
-    container_name='task_get_sunlight_avg',
     network_mode="data-dota",
     auto_remove=True,
     # xcom_all=True,
     api_version='auto',
-    docker_url="TCP://docker-socket-proxy:2375",
+    docker_url="tcp://docker-socket-proxy:2375",
 )
 
 
-task_offline_get_csv >> task_index_to_mongo >> task_get_sunlight_avg
+task_get_csv_mock >> task_index_to_mongo_mock >> task_get_sunlight_avg_mock

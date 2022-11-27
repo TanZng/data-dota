@@ -51,23 +51,31 @@ services:
         source: ./tmp/mongo-data
         target: /data/db
   neo:
-    image: neo4j:4.0.3
+    image: neo4j:5.1.0
     hostname: neo
     container_name: neo
     restart: always
     environment:
-      NEO4J_AUTH: none
+      - NEO4J_AUTH=none
+      - NEO4J_server.bolt.advertised_address=neo:7687
     ports:
         - "7474:7474"
         - "7687:7687"
     volumes:
-      - type: bind
-        source: ./tmp/neo4j-data
-        target: /data
+      - ./tmp/neo4j-data:/data
+  neo-dash:
+    image: nielsdejong/neodash:2.2.0
+    hostname: neodash
+    container_name: neodash
+    restart: always
+    ports:
+        - "5005:5005"
   mock-api:
     build:
       context: ./mock-api
       dockerfile: ../mock-api/Dockerfile
+    hostname: mock-api
+    container_name: mock-api
     ports:
       - "5010:5010"
   postgres-airflow:
@@ -108,7 +116,7 @@ services:
       service: flower
   docker-socket-proxy:
     extends:
-      file: airflow-compose.yaml
+      file: docker-socket-proxy.yaml
       service: docker-socket-proxy
 networks:
   default:

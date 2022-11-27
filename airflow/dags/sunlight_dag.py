@@ -1,5 +1,6 @@
-import airflow
 import csv
+import time
+import airflow
 from airflow import DAG
 from datetime import timedelta, datetime
 from airflow.operators.bash_operator import BashOperator
@@ -46,30 +47,25 @@ task_get_csv = BashOperator(
     bash_command="curl https://raw.githubusercontent.com/TanZng/data-dota/main/day-light-table-to-csv/table.csv --output /opt/airflow/dags/data/sunlight.csv",
 )
 
-task_offline_get_csv = BashOperator(
-    task_id='offline_get_csv',
-    dag=sunlight_dag,
-    bash_command="curl http://mock-api:5010/sunlight.csv --output /opt/airflow/dags/data/sunlight.csv",
-)
-
 task_index_to_mongo = PythonOperator(
     task_id='index_sunlight_to_mongo',
     dag=sunlight_dag,
     python_callable=upload_to_mongo,
 )
 
+id_now = int( time.time() )
+
 task_get_sunlight_avg = DockerOperator(
     task_id='docker_get_sunlight_avg',
     dag=sunlight_dag,
     mount_tmp_dir=False,
-    image='avg_sunlight_by_region',
-    container_name='task_get_sunlight_avg',
+    image='avg_sunlight_by_region:latest',
     network_mode="data-dota",
     auto_remove=True,
     # xcom_all=True,
     api_version='auto',
-    docker_url="TCP://docker-socket-proxy:2375",
+    docker_url="tcp://docker-socket-proxy:2375",
 )
 
 
-[task_get_csv, task_offline_get_csv] >> task_index_to_mongo >> task_get_sunlight_avg
+# task_get_csv >> task_index_to_mongo >> task_get_sunlight_avg
