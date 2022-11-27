@@ -47,17 +47,13 @@ The raw data injested are then stored in mongodb for ease of access.
 
 ### Cleansing
 
-One example of the cleansing step is the way we process the Dota region and sunlight cities to make it correspond. The original data we downloaded has a big issue concerning the location : Dota data was ordered by region (meaning each place where there is a dota server) and sunlight data by cities. So we first have to clean the Dota region name into something more obvious and then binding each Dota region with one or more cities from sunlight data. So we added an attribute to the original Dota region DB : cities. This is done manually because the amount of data is not big enough to make the automatism process relevant. One that was done, it was just about joining the two tables.
+One example of the cleansing step is the way we process the Dota region and sunlight cities in order to link the two. The original data we downloaded have a big issue concerning the location : Dota data were ordered by region (in other words, a dota server), while sunlight data are grouped by cities. So we first have to clean the Dota region name into something more obvious and then bind each Dota region with one or more cities from sunlight data. In order to do so, we added an attribute to the original Dota region DB: a city that is the approximate center of the aforementioned region. This is done manually because the amount of data is not big enough to make the automatic process worthwhile. Once that was done, all that was left was to join the two tables.
 
 For the match details data, the raw JSON returned by the OpenDota API is enourmous: aside from the data we utilize in our project, there are various other useful data that are not analysed (like the game mode, whether or not a match is a tournament, the ending status of the two teams' buildings, etc), as well as a lot of unimportant data (in particular the cosmetics equipped by a player, and the duplication of match details in each player details in the match, expanding the raw data by 10 times). The first step is then to select only the attributes that we need.
 
 ### Transformations
 
-> Explain another transformation
-
-Also the sunlight by city per month data is indexed to MongoDB, since it will be easy to manipulate in further steps as a collection than a CSV.
-
-As for the match details data, now reduced to a select few attributes, we must first filter out any matches that have none of the analytical data that we need, such as the `stomp` as `comeback` attributes.
+For the match details data, now reduced to a select few attributes, we must first filter out any matches that have none of the analytical data that we need, such as the `stomp` as `comeback` attributes.
 
 Afterwards, to better categorize the dimension attributes, we transform certain dimensions from raw numerical values to categories. This applies to the Duration dimension and the Sunlight dimension:
 - We categorize the Duration dimension into 5 categories:
@@ -88,11 +84,11 @@ np.ceil((min(max((monthly_sunlight[month_name]/average),0.85),1.3)-0.75)/0.1)
 
 In short, the operation rescales the percentage of between monthly sunlight and yearly average from [0,+infinite] to [0.1,0.5] with the min/max operations, then multiplies the value by 10 and getting the integer ceiling, and we end up with integers between `1` and `5`
 
+Also for the sunlight by city per month data, the documents are indexed to MongoDB, since it will be easy to manipulate in further steps as a collection than a CSV.
+
 ### Enrichments
 
-> Explain a Enrichment
-
-Another important enrichments that happen is to the regions with their average sunlight per month. To make this happen we developed a python script and containerized it, it can be find in the ``avg_sunlight_by_region/`` folder. Then this script is run by the ``DockerOperator`` from Airflow. 
+An important enrichment that we performed is to the regions with their average sunlight per month. To make this happen we developed a python script and containerized it, it can be find in the ``avg_sunlight_by_region/`` folder. Then this script is ran by the ``DockerOperator`` from Airflow. 
 
 The DockerOperator allows AirFlow to run Docker containers. We decide to get this task done using Docker to avoid run a huge script using the ``PythonOperator``. 
 
@@ -125,9 +121,9 @@ For the first question that we have (concerning the gameplay overall gameplay pe
 
 As such, we decided to create a star schema for this part of the analytical question. The Duration and Sunlight tables can be generated easily with just an ID and a name for each categories. The fact table can be uploaded directly after the wrangling process: we already transformed the raw data for `duration` into IDs that point to the Duration table. The main issue is linking each match to a level of sunlight (Sunlight_level table). In order to do this, we created an ID in the fact table that is the `REGION_Month` of where and when the match was played. We then created a mapping table `Sunlight_map`, which points each `REGION_Month` to a corresponding `Sunlight_level`. In doing so, the star schema becomes a snowflake schema (albeit in just this dimension)
 
-In order to represent the impact of the lineup (5 heroes) in a match, we were looking about something which bind each heroes to its lineup, and the each lineup to the match. So naturally we chose a graph schema edited with Neo4j data system.
-The way we proceed is quite simple. First we created each node. Match nodes have just one attribute (its id) and were created according to the match_details DB staged in MongoDB (post wrangling process). Hero nodes have two attributes (its id and its name) and were created with the heroes DB also in MongoDB. For Lineup nodes, it was a bit more tricky : as we didn't want to create all the lineup possible with all the heroes (which would represent approximately h*(h-1)(h-2)(h-3)(h-4) possibilities with h the number of heroes) because only few of them are used, we decided to create just the lineup used for matches we want to analyse. What's more, we retrieve the radiant_win attribute for each match to know which team won (and so the other lost). So each Lineup nodes have 7 attributes (ids of the five heroes which are belonging to this lineup, the match id this lineup is referring to and the name of the team (radiant or dire)).
-Than we created the bindings between heroes and lineup (just a cypher statement according to the hero id) and between lineup and matches.
+In order to represent the impact of the lineup (5 heroes) in a match, we were looking for a way to bind heroes to a lineup, and then each lineup to the match. So for this, naturally we chose a graph schema (using Neo4j).
+The way we proceed is quite simple. First we created each node. Match nodes have just one attribute (its id) and were created according to the match_details DB staged in MongoDB (after the wrangling process). Hero nodes have two attributes (its id and its name) and were created with the heroes DB also in MongoDB. For Lineup nodes, it was a bit more tricky : as we didn't want to create all the lineup possible with all the heroes (which would represent approximately h*(h-1)(h-2)(h-3)(h-4) possibilities with h the number of heroes) because only few of them are used, we decided to create just the lineups used for matches we want to analyse. What's more, we retrieve the radiant_win attribute for each match to know which team won (the two teams in Dota are named `Radiant` and `Dire`, and there is always only 1 winning team, so this attribute can tell us exactly which team wins). So each Lineup nodes have 7 attributes (ids of the five heroes which are belonging to this lineup, the match id this lineup is referring to and the name of the team - Radiant or Dire).
+Then we created the bindings between heroes and lineup (just a cypher statement according to the hero id) and between lineup and matches.
 
 ### Queries
 
@@ -137,13 +133,17 @@ For visualization we use:
 
 # Conclusion & (potential) furture developments
 
+Overall, the project has concluded fairly successfully. The ETL pipeline was completed, and all the goals we set at the beginning were achieved. There are some aspects that could be improved upon, but we are satisfied with the end result.
 
+Some aspects that we noted for future developments:
 
-The match details wrangling process can maybe be sped up by using redis as an intermediate to store the match_details while selecting attributes/filtering/transforming data. Currently the data are stored in mongoDB and processed directly in memory, but this method might not work if the data amount becomes too big. We can also process a small portion of data at a time.
+- The automisation for updating the data can be improved. The match details query is currently written statically: we will always query the same matches (but this can be automatised fairly easily). Finding a city for each dota region (game server) is probably the hardest to automatise, and also the least worthwhile: we can just spend a few minutes each time a new server is built (which is by itself a rare occurance).
 
-The star schema can be optimized by making the wrangling process directly link each match to a sunlight level, instead of creating a `REGION_Month` ID and an intermediate mapping table. This will make the wrangling process a bit heavier on the processing side, but it will greatly reduce the processing needed when we extract the data and run queries.
+- The match details wrangling process can maybe be sped up by using redis as an intermediate to store the match_details while selecting attributes/filtering/transforming data. Currently the data are stored in mongoDB and processed directly in memory, but this method might not work if the data amount becomes too big. We can also process a small portion of data at a time.
 
-Many other dimensions can be added in order to enrich our analytics: creating a Gamemode dimension, a Patch dimension, or utilizing other analytical data such as the gold income of each player/hero in the graph schema.
+- The star schema can be optimized by making the wrangling process directly link each match to a sunlight level, instead of creating a `REGION_Month` ID and an intermediate mapping table. This will make the wrangling process a bit heavier on the processing side, but it will greatly reduce the processing needed when we extract the data and run queries.
+
+- Many other dimensions can be added in order to enrich our analytics: creating a Gamemode dimension, a Patch dimension, or utilizing other analytical data such as the gold income of each player/hero in the graph schema.
 
 # Project Submission Checklist
 
