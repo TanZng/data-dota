@@ -12,7 +12,7 @@
     - [Enrichments](#enrichments)
   - [Production](#production)
     - [Queries](#queries)
-- [Conclusion](#conclusion)
+- [Future developments](#future-developments)
 - [Project Submission Checklist](#project-submission-checklist)
 - [How to run?](#how-to-run)
   - [Automatic](#automatic)
@@ -131,7 +131,7 @@ For visualization we use:
 - A Power BI dashboard for the star schema - /dashboard/OT_Star_schema.pbix
 - NeoDash for the graph schema - http://localhost:5005/
 
-# Conclusion & (potential) furture developments
+# Future developments
 
 Overall, the project has concluded fairly successfully. The ETL pipeline was completed, and all the goals we set at the beginning were achieved. There are some aspects that could be improved upon, but we are satisfied with the end result.
 
